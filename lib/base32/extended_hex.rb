@@ -1,6 +1,6 @@
 # encoding: UTF-8
 #
-# (c) 2008, Levin Alexander <http://levinalex.net>
+# Based on https://github.com/levinalex/base32
 #
 # This file is released under the same license as ruby.
 
@@ -9,30 +9,11 @@ require 'enumerator'
 module Base32
 end
 
-# encode a value with the encoding defined by _Douglas_ _Crockford_ in
-# <http://www.crockford.com/wrmg/base32.html>
+# encode a value with the extended hex alphabet
+# <https://tools.ietf.org/html/rfc4648#page-10>
 #
 # this is *not* the same as the Base32 encoding defined in RFC 4648
-#
-#
-# The Base32 symbol set is a superset of the Base16 symbol set.
-#
-# We chose a symbol set of 10 digits and 22 letters. We exclude 4 of the 26
-# letters: I L O U.
-#
-# Excluded Letters
-#
-# I:: Can be confused with 1
-# L:: Can be confused with 1
-# O:: Can be confused with 0
-# U:: Accidental obscenity
-#
-# When decoding, upper and lower case letters are accepted, and i and l will
-# be treated as 1 and o will be treated as 0. When encoding, only upper case
-# letters are used.
-#
-# If the bit-length of the number to be encoded is not a multiple of 5 bits,
-# then zero-extend the number to make its bit-length a multiple of 5.
+# it is similar to Crockford Base32 encoding, but the chars are different.
 #
 # Hyphens (-) can be inserted into symbol strings. This can partition a
 # string into manageable pieces, improving readability by helping to prevent
@@ -40,15 +21,15 @@ end
 # hyphens to assure symbol string correctness.
 #
 #
-class Base32::Crockford
-  VERSION = "0.1.0"
+class Base32::ExtendedHex
+  VERSION = "0.0.1"
 
   ENCODE_CHARS =
-    %w(0 1 2 3 4 5 6 7 8 9 A B C D E F G H J K M N P Q R S T V W X Y Z ?)
+    %w(0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V ?)
 
   DECODE_MAP = ENCODE_CHARS.to_enum(:each_with_index).inject({}) do |h,(c,i)|
     h[c] = i; h
-  end.merge({'I' => 1, 'L' => 1, 'O' => 0})
+  end
 
   # encodes an integer into a string
   #
@@ -58,8 +39,8 @@ class Base32::Crockford
   # when +length+ is given, the resulting string is zero-padded to be exactly
   # this number of characters long (hyphens are ignored)
   #
-  #   Base32::Crockford.encode(1234) # => "16J"
-  #   Base32::Crockford.encode(123456789012345, :split=>5) # => "3G923-0VQVS"
+  #   Base32::ExtendedHex.encode(1234) # => "16I"
+  #   Base32::ExtendedHex.encode(123456789012345, :split=>5) # => "3G923-0RNRP"
   #
   def self.encode(number, opts = {})
     # verify options
@@ -80,17 +61,10 @@ class Base32::Crockford
     str
   end
 
-  # decode a string to an integer using Douglas Crockfords Base32 Encoding
+  # decode a string to an integer
   #
   # the string is converted to uppercase and hyphens are stripped before
   # decoding
-  #
-  #   I,i,l,L decodes to 1
-  #   O,o decodes to 0
-  #
-  #   Base32::Crockford.decode("16J") # => 1234
-  #   Base32::Crockford.decode("OI") # => 1
-  #   Base32::Crockford.decode("3G923-0VQVS") # => 123456789012345
   #
   # returns +nil+ if the string contains invalid characters and can't be
   # decoded
